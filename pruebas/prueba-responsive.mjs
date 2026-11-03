@@ -58,6 +58,11 @@ for (const pantalla of PANTALLAS) {
 
   for (const ruta of [
     'index.html',
+    'cliente/planes.html',
+    'cliente/tienda.html',
+    'cliente/clases.html',
+    'cliente/rutinas.html',
+    'cliente/contacto.html',
     'cliente/nutricion.html',
     'cliente/login.html',
     'cliente/checkout.html',
@@ -212,7 +217,7 @@ for (const pantalla of PANTALLAS) {
       return bajos;
     });
 
-  for (const ruta of ['index.html', 'cliente/nutricion.html', 'cliente/login.html', 'cliente/checkout.html', 'admin/login.html']) {
+  for (const ruta of ['index.html', 'cliente/planes.html', 'cliente/tienda.html', 'cliente/clases.html', 'cliente/rutinas.html', 'cliente/contacto.html', 'cliente/nutricion.html', 'cliente/login.html', 'cliente/checkout.html', 'admin/login.html']) {
     await pagina.goto(`${BASE}/${ruta}`, { waitUntil: 'networkidle' });
     const bajos = await medirContraste();
     comprobar(

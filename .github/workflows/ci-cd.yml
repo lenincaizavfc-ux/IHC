@@ -1,4 +1,4 @@
-﻿name: VerificaciÃ³n y publicaciÃ³n
+name: Verificación y publicación
 
 # El sitio se valida en cada cambio y solo se publica si todo pasa.
 on:
@@ -30,7 +30,7 @@ jobs:
           node-version: '22'
 
       # Playwright se instala solo en el servidor de CI: el proyecto no declara
-      # dependencias ni aÃ±ade archivos de paquete al repositorio.
+      # dependencias ni añade archivos de paquete al repositorio.
       - name: Instalar Playwright para las pruebas de navegador
         run: |
           npm install --no-save --no-package-lock playwright@1.63.0
@@ -45,7 +45,7 @@ jobs:
           if [ "$fallos" -ne 0 ]; then exit 1; fi
           echo "Sintaxis correcta en $(git ls-files '*.js' '*.mjs' | wc -l) archivos"
 
-      - name: HTML5 y semÃ¡ntica
+      - name: HTML5 y semántica
         run: |
           codigo=0
           node pruebas/prueba-html.mjs > /tmp/salida.txt 2>&1 || codigo=$?
@@ -69,7 +69,7 @@ jobs:
           grep '^FALLA' /tmp/salida.txt | sed -e 's/%/%25/g' -e 's/^/::error::/' || true
           exit $codigo
 
-      - name: LÃ³gica del carrito y planes
+      - name: Lógica del carrito y planes
         run: |
           codigo=0
           node pruebas/prueba-logica.mjs > /tmp/salida.txt 2>&1 || codigo=$?
@@ -102,15 +102,6 @@ jobs:
           exit $codigo
 
       - name: Recorrido completo en navegador
-
-      - name: Hash y posicion pendiente
-        run: |
-          codigo=0
-          node pruebas/prueba-hash.mjs > /tmp/salida.txt 2>&1 || codigo=True
-          cat /tmp/salida.txt
-          grep '^FALLA' /tmp/salida.txt | sed -e 's/%/%25/g' -e 's/^/::error::/' || true
-          exit $codigo
-
         run: |
           codigo=0
           node pruebas/prueba-navegador.mjs > /tmp/salida.txt 2>&1 || codigo=$?
@@ -118,7 +109,15 @@ jobs:
           grep '^FALLA' /tmp/salida.txt | sed -e 's/%/%25/g' -e 's/^/::error::/' || true
           exit $codigo
 
-      - name: DiseÃ±o responsive y accesibilidad medida
+      - name: Paginas independientes y enlace activo
+        run: |
+          codigo=0
+          node pruebas/prueba-paginas.mjs > /tmp/salida.txt 2>&1 || codigo=$?
+          cat /tmp/salida.txt
+          grep '^FALLA' /tmp/salida.txt | sed -e 's/%/%25/g' -e 's/^/::error::/' || true
+          exit $codigo
+
+      - name: Diseño responsive y accesibilidad medida
         run: |
           codigo=0
           node pruebas/prueba-responsive.mjs > /tmp/salida.txt 2>&1 || codigo=$?
@@ -129,8 +128,8 @@ jobs:
   desplegar:
     name: Publicar en GitHub Pages
     needs: verificar
-    # La publicaciÃ³n solo ocurre con un push a la rama principal, nunca desde una
-    # pull request ni desde una ejecuciÃ³n manual incompleta.
+    # La publicación solo ocurre con un push a la rama principal, nunca desde una
+    # pull request ni desde una ejecución manual incompleta.
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -141,9 +140,9 @@ jobs:
       name: github-pages
       url: ${{ steps.publicar.outputs.page_url }}
     steps:
-      # Falla aquÃ­ si Pages no estÃ¡ habilitado en el repositorio, de modo que no
-      # se publica nada sin la configuraciÃ³n correcta.
-      - name: Verificar la configuraciÃ³n de Pages
+      # Falla aquí si Pages no está habilitado en el repositorio, de modo que no
+      # se publica nada sin la configuración correcta.
+      - name: Verificar la configuración de Pages
         id: pages
         uses: actions/configure-pages@v5
 
@@ -159,7 +158,7 @@ jobs:
           done
           echo "Archivos preparados: $(find _sitio -type f | wc -l)"
 
-      # Ãšltima revisiÃ³n antes de publicar: comprueba sobre la copia final que no
+      # Última revisión antes de publicar: comprueba sobre la copia final que no
       # hay rutas rotas ni destinos inseguros.
       - name: Validar el sitio preparado
         run: |

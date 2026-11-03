@@ -31,9 +31,9 @@ function inyectarEstructura() {
   if (document.querySelector('[data-panel-carrito]')) return;
 
   // Las rutas absolutas del sitio evitan que los enlaces del panel se
-  // resuelvan mal dentro de /cliente/. El catálogo vive en la página
-  // principal, así que "seguir comprando" vuelve a su sección #tienda.
-  const tienda = new URL('index.html#tienda', raizSitio()).href;
+  // resuelvan mal dentro de /cliente/. El catálogo tiene su propia
+  // página, así que "seguir comprando" vuelve a cliente/tienda.html.
+  const tienda = new URL('cliente/tienda.html', raizSitio()).href;
   const registro = new URL('cliente/login.html#registro', raizSitio()).href;
 
   document.body.insertAdjacentHTML(

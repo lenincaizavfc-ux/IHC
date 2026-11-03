@@ -17,19 +17,19 @@
   <!-- ================= Encabezado y navegación ================= -->
   <header class="pf-encabezado border-b border-pf-linea bg-pf-negro">
     <nav class="pf-nav mx-auto max-w-6xl px-4" aria-label="Navegación principal">
-      <a href="#inicio" class="pf-logo" aria-label="Planeta Fitness, ir al inicio">
+      <a href="index.html" class="pf-logo" aria-label="Planeta Fitness, ir al inicio">
         <img src="assets/img/logo/logo-planeta.png" alt="Planeta Fitness" width="112" height="101">
       </a>
 
       <div id="menu-principal" data-menu class="pf-menu">
         <ul class="pf-menu-lista">
-          <li><a href="#inicio" class="pf-enlace pf-enlace-activo" aria-current="location">Inicio</a></li>
-          <li><a href="#planes" class="pf-enlace">Planes</a></li>
-          <li><a href="#tienda" class="pf-enlace">Tienda</a></li>
-          <li><a href="#clases" class="pf-enlace">Clases</a></li>
-          <li><a href="#rutinas" class="pf-enlace">Rutinas</a></li>
-          <li><a href="#nutricion" class="pf-enlace">Nutrición</a></li>
-          <li><a href="#contacto" class="pf-enlace">Contacto</a></li>
+          <li><a href="index.html" class="pf-enlace pf-enlace-activo" aria-current="page">Inicio</a></li>
+          <li><a href="cliente/planes.html" class="pf-enlace">Planes</a></li>
+          <li><a href="cliente/tienda.html" class="pf-enlace">Tienda</a></li>
+          <li><a href="cliente/clases.html" class="pf-enlace">Clases</a></li>
+          <li><a href="cliente/rutinas.html" class="pf-enlace">Rutinas</a></li>
+          <li><a href="cliente/nutricion.html" class="pf-enlace">Nutrición</a></li>
+          <li><a href="cliente/contacto.html" class="pf-enlace">Contacto</a></li>
         </ul>
 
         <div class="pf-menu-acciones">
@@ -72,7 +72,7 @@
 
   <main id="contenido">
     <!-- ================= Hero / Inicio ================= -->
-    <section id="inicio" class="relative isolate scroll-mt-24 overflow-hidden bg-pf-negro" aria-labelledby="titulo-hero">
+    <section id="inicio" class="relative isolate overflow-hidden bg-pf-negro" aria-labelledby="titulo-hero">
       <img
         src="assets/img/gimnasio/hero-gimnasio.jpg"
         alt=""
@@ -89,8 +89,8 @@
           La constancia empieza hoy.
         </p>
         <div class="mt-10 flex flex-wrap justify-center gap-4">
-          <a href="#planes" class="pf-boton pf-boton-primario">Ver planes</a>
-          <a href="#tienda" class="pf-boton pf-boton-secundario">Ver tienda</a>
+          <a href="cliente/planes.html" class="pf-boton pf-boton-primario">Ver planes</a>
+          <a href="cliente/tienda.html" class="pf-boton pf-boton-secundario">Ver tienda</a>
         </div>
         <p class="mt-10 text-sm text-neutral-400">
           <span data-gimnasio-direccion>Avenida San Rio de Janeiro y Panamá, Quito, Ecuador</span> ©
@@ -99,226 +99,44 @@
       </div>
     </section>
 
-    <!-- Región de mensajes dinámicos: los anuncios llegan por aria-live -->
-    <p id="mensaje-dinamico" class="mx-auto mt-6 max-w-6xl px-4 text-sm font-semibold text-neutral-200" role="status" aria-live="polite"></p>
-
-    <!--
-      Mejora progresiva: el catálogo, los planes y las clases se dibujan con
-      JavaScript a partir de los archivos JSON. Sin JavaScript esa información
-      no aparece, así que se ofrece una vía alternativa equivalente.
-    -->
-    <noscript>
-      <div class="mx-auto mt-6 max-w-6xl px-4">
-        <div class="pf-tarjeta p-6" role="alert">
-          <p class="font-bold text-pf-amarillo">Aviso: parte del contenido necesita JavaScript</p>
-          <p class="mt-2 text-neutral-300">
-            El catálogo de productos, los horarios de clases y las rutinas se cargan de forma automática.
-            Si tu navegador tiene JavaScript desactivado, puedes contratar directamente en recepción o
-            escribirnos a
-            <a class="underline decoration-pf-amarillo" href="mailto:planetafitness@gmail.com">planetafitness@gmail.com</a>.
-          </p>
-          <ul class="mt-4 list-inside list-disc text-neutral-300">
-            <li>Plan individual: <strong class="text-white">$35</strong> al mes.</li>
-            <li>Plan para 2 personas: <strong class="text-white">$60</strong> al mes.</li>
-            <li>Plan para 3 personas: <strong class="text-white">$85</strong> al mes.</li>
-          </ul>
-          <p class="mt-4 text-sm text-neutral-400">
-            Horarios de atención: lunes a viernes de 06:00 a 21:00, sábado de 09:00 a 12:00, domingo cerrado.
-          </p>
-        </div>
-      </div>
-    </noscript>
-
-    <!-- ================= Planes ================= -->
-    <section id="planes" class="mx-auto max-w-6xl scroll-mt-24 px-4 py-16" aria-labelledby="titulo-planes">
-      <h2 id="titulo-planes" class="text-3xl font-extrabold uppercase text-white">Planes</h2>
+    <!-- ================= Resumen: acceso a cada página ================= -->
+    <section class="mx-auto max-w-6xl px-4 py-16" aria-labelledby="titulo-resumen">
+      <h2 id="titulo-resumen" class="text-3xl font-extrabold uppercase text-white">Explora Planeta Fitness</h2>
       <p class="mt-3 max-w-3xl text-neutral-300">
-        Tres planes mensuales. Todos incluyen acceso a los 2 pisos, pesas, cardio, boxeo,
-        bailoterapia y rutina según nivel. Puedes agregar el plan al carrito sin iniciar sesión.
+        Elige una sección para conocer los planes, la tienda, las clases, las rutinas, la nutrición o la forma de contactarnos.
       </p>
-
-      <div data-planes class="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" aria-busy="false" aria-live="polite"></div>
-
-      <section class="mt-16" aria-labelledby="titulo-como-contratar">
-        <h3 id="titulo-como-contratar" class="text-2xl font-bold uppercase text-white">Cómo elegir tu plan</h3>
-        <ol class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <li class="pf-tarjeta p-4">
-            <p class="font-bold text-pf-amarillo">1. Elige tu plan</p>
-            <p class="mt-1 text-sm text-neutral-300">Pulsa “Elegir plan” y se agrega al carrito.</p>
+      <ul class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <li class="pf-tarjeta flex flex-col p-6">
+            <h3 class="text-xl font-bold uppercase text-white">Planes</h3>
+            <p class="mt-2 flex-1 text-sm text-neutral-300">Tres planes mensuales: individual $35, para 2 personas $60 y para 3 personas $85.</p>
+            <a href="cliente/planes.html" class="pf-boton pf-boton-secundario mt-4 self-start">Ver planes</a>
           </li>
-          <li class="pf-tarjeta p-4">
-            <p class="font-bold text-pf-amarillo">2. Agrega productos</p>
-            <p class="mt-1 text-sm text-neutral-300">Puedes sumar suplementos o ropa deportiva.</p>
+          <li class="pf-tarjeta flex flex-col p-6">
+            <h3 class="text-xl font-bold uppercase text-white">Tienda</h3>
+            <p class="mt-2 flex-1 text-sm text-neutral-300">Suplementos, alimentación y ropa deportiva. Agrega al carrito sin iniciar sesión.</p>
+            <a href="cliente/tienda.html" class="pf-boton pf-boton-secundario mt-4 self-start">Ver tienda</a>
           </li>
-          <li class="pf-tarjeta p-4">
-            <p class="font-bold text-pf-amarillo">3. Inicia sesión</p>
-            <p class="mt-1 text-sm text-neutral-300">Se pide solo al finalizar la compra.</p>
+          <li class="pf-tarjeta flex flex-col p-6">
+            <h3 class="text-xl font-bold uppercase text-white">Clases</h3>
+            <p class="mt-2 flex-1 text-sm text-neutral-300">Boxeo y bailoterapia con un entrenador. Consulta el día, la hora y el lugar.</p>
+            <a href="cliente/clases.html" class="pf-boton pf-boton-secundario mt-4 self-start">Ver clases</a>
           </li>
-          <li class="pf-tarjeta p-4">
-            <p class="font-bold text-pf-amarillo">4. Retíralo en el gym</p>
-            <p class="mt-1 text-sm text-neutral-300">Confirmas el pedido y lo recoges aquí.</p>
+          <li class="pf-tarjeta flex flex-col p-6">
+            <h3 class="text-xl font-bold uppercase text-white">Rutinas</h3>
+            <p class="mt-2 flex-1 text-sm text-neutral-300">Tu rutina se define según tu nivel y los entrenadores la ajustan en el gimnasio.</p>
+            <a href="cliente/rutinas.html" class="pf-boton pf-boton-secundario mt-4 self-start">Ver rutinas</a>
           </li>
-        </ol>
-        <p class="mt-6 text-sm text-neutral-300">
-          Horarios de atención: lunes a viernes de 06:00 a 21:00, sábado de 09:00 a 12:00, domingo cerrado.
-        </p>
-      </section>
-    </section>
-
-    <!-- ================= Tienda ================= -->
-    <section id="tienda" class="scroll-mt-24 bg-pf-grafito py-16" aria-labelledby="titulo-tienda">
-      <div class="mx-auto max-w-6xl px-4">
-        <div class="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 id="titulo-tienda" class="text-3xl font-extrabold uppercase text-white">Tienda</h2>
-            <p class="mt-3 max-w-3xl text-neutral-300">
-              Suplementos, alimentación y ropa deportiva. Agrega al carrito sin iniciar sesión.
-            </p>
-          </div>
-        </div>
-
-        <p id="mensaje-catalogo" class="pf-mensaje mt-6 text-sm" role="status" aria-live="polite" hidden></p>
-
-        <div data-catalogo class="mt-8" aria-busy="false" aria-live="polite"></div>
-      </div>
-    </section>
-
-    <!-- ================= Clases ================= -->
-    <section id="clases" class="mx-auto max-w-6xl scroll-mt-24 px-4 py-16" aria-labelledby="titulo-clases">
-      <h2 id="titulo-clases" class="text-3xl font-extrabold uppercase text-white">Clases</h2>
-      <p class="mt-3 max-w-3xl text-neutral-300">
-        Cada clase se realiza con un entrenador. Consulta el día, la hora y el lugar antes de venir.
-      </p>
-
-      <div data-clases class="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2" aria-busy="false" aria-live="polite"></div>
-
-      <section class="mt-16" aria-labelledby="titulo-entrenadores">
-        <h3 id="titulo-entrenadores" class="text-2xl font-bold uppercase text-white">Entrenadores</h3>
-        <p class="mt-2 text-neutral-300">Consulta con un entrenador para recibir una rutina según tu nivel.</p>
-        <div data-entrenadores class="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
-      </section>
-    </section>
-
-    <!-- ================= Rutinas según nivel ================= -->
-    <section id="rutinas" class="scroll-mt-24 bg-pf-grafito py-16" aria-labelledby="titulo-rutinas">
-      <div class="mx-auto max-w-6xl px-4">
-        <h2 id="titulo-rutinas" class="text-3xl font-extrabold uppercase text-white">Rutinas</h2>
-        <p class="mt-3 max-w-3xl text-neutral-300">
-          Tu rutina se define según el nivel con el que entrenas. Los entrenadores la ajustan
-          en el gimnasio y se puede cambiar cuando mejore tu condición.
-        </p>
-        <ul data-niveles class="mt-8 grid gap-3 sm:grid-cols-3"></ul>
-
-        <h3 class="mt-16 text-2xl font-bold uppercase text-white">Servicios</h3>
-        <p class="mt-2 max-w-3xl text-neutral-300">
-          Dos pisos, máquinas de pesas, cardio, clases dirigidas y asesoría nutricional.
-        </p>
-        <div data-servicios class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
-      </div>
-    </section>
-
-    <!-- ================= Nutrición ================= -->
-    <section id="nutricion" class="mx-auto max-w-6xl scroll-mt-24 px-4 py-16" aria-labelledby="titulo-nutricion">
-      <div class="grid gap-8 lg:grid-cols-2 lg:items-center">
-        <div>
-          <h2 id="titulo-nutricion" class="text-3xl font-extrabold uppercase text-white">Nutrición</h2>
-          <p class="mt-4 text-neutral-300">
-            En Planeta Fitness la nutricionista realiza evaluación, análisis personalizado y asesoría
-            nutricional. La asesoría nutricional tiene un precio diferente y se obtiene mediante cita.
-          </p>
-          <ul class="mt-4 space-y-2 text-neutral-200">
-            <li>– Evaluación nutricional.</li>
-            <li>– Análisis personalizado.</li>
-            <li>– Asesoría nutricional mediante cita.</li>
-          </ul>
-          <p class="mt-6 rounded-lg border border-pf-linea bg-pf-grafito p-4 text-sm font-semibold text-neutral-200">
-            El precio de la asesoría nutricional se consulta en el gimnasio. No se muestra un precio fijo.
-          </p>
-          <a href="cliente/nutricion.html" class="pf-boton pf-boton-primario mt-6">Solicitar cita</a>
-        </div>
-        <figure>
-          <img
-            src="assets/img/gimnasio/nutricion.jpg"
-            alt="Consultorio de la nutricionista de Planeta Fitness"
-            class="rounded-xl border border-pf-linea"
-            width="1200" height="817" loading="lazy">
-          <figcaption class="mt-2 text-sm text-neutral-400">La asesoría nutricional se agenda con hora previa.</figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <!-- ================= Contacto ================= -->
-    <section id="contacto" class="mx-auto max-w-6xl scroll-mt-24 px-4 py-16" aria-labelledby="titulo-contacto">
-      <h2 id="titulo-contacto" class="text-3xl font-extrabold uppercase text-white">Contacto</h2>
-      <p class="mt-3 max-w-3xl text-neutral-300">
-        Planeta Fitness es un gimnasio ubicado en la Avenida San Rio de Janeiro y Panamá, en Quito,
-        con dos pisos de entrenamiento. Puedes registrarte para asistencia, solicitar un plan,
-        consultar con los entrenadores y recibir una rutina de acuerdo con tu nivel.
-      </p>
-      <div class="mt-10 grid gap-8 lg:grid-cols-2">
-        <address class="not-italic">
-          <h3 class="text-xl font-bold text-white">Planeta Fitness</h3>
-          <p class="mt-3 text-neutral-300">
-            <span class="font-semibold text-white">Dirección:</span>
-            <span data-gimnasio-direccion>Avenida San Rio de Janeiro y Panamá, Quito, Ecuador</span>
-          </p>
-          <p class="mt-2 text-neutral-300">
-            <span class="font-semibold text-white">Correo:</span>
-            <a href="mailto:planetafitness@gmail.com" data-gimnasio-correo class="text-pf-amarillo underline">planetafitness@gmail.com</a>
-          </p>
-
-          <h3 class="mt-8 text-xl font-bold text-white">Horarios de atención</h3>
-          <ul data-gimnasio-horarios class="mt-2"></ul>
-        </address>
-
-        <section aria-labelledby="titulo-formulario-contacto">
-          <h3 id="titulo-formulario-contacto" class="text-xl font-bold text-white">Escríbenos</h3>
-          <p class="mt-1 text-sm text-neutral-300">Los campos marcados con * son obligatorios.</p>
-
-          <form id="formulario-contacto" class="mt-4 space-y-4" novalidate>
-            <div>
-              <label class="block font-semibold text-white" for="nombre">Nombre completo *</label>
-              <input
-                class="mt-1 w-full rounded-lg border p-2"
-                type="text" id="nombre" name="nombre" required minlength="2" maxlength="60" autocomplete="name"
-                aria-describedby="ayuda-nombre">
-              <p id="ayuda-nombre" class="text-sm text-neutral-400">Entre 2 y 60 letras.</p>
-            </div>
-
-            <div>
-              <label class="block font-semibold text-white" for="correo">Correo electrónico *</label>
-              <input
-                class="mt-1 w-full rounded-lg border p-2"
-                type="email" id="correo" name="correo" required autocomplete="email"
-                aria-describedby="ayuda-correo">
-              <p id="ayuda-correo" class="text-sm text-neutral-400">Ejemplo: nombre@correo.com</p>
-            </div>
-
-            <div>
-              <label class="block font-semibold text-white" for="telefono">Teléfono *</label>
-              <input
-                class="mt-1 w-full rounded-lg border p-2"
-                type="tel" id="telefono" name="telefono" required inputmode="numeric" autocomplete="tel"
-                pattern="^09\d{8}$"
-                data-mensaje-patron="El teléfono debe tener 10 dígitos y empezar por 09."
-                aria-describedby="ayuda-telefono">
-              <p id="ayuda-telefono" class="text-sm text-neutral-400">10 dígitos, empieza por 09. Ejemplo: 0991234567</p>
-            </div>
-
-            <div>
-              <label class="block font-semibold text-white" for="mensaje">Mensaje *</label>
-              <textarea
-                class="mt-1 w-full rounded-lg border p-2"
-                id="mensaje" name="mensaje" rows="4" required minlength="10" maxlength="400"
-                aria-describedby="ayuda-mensaje"></textarea>
-              <p id="ayuda-mensaje" class="text-sm text-neutral-400">Entre 10 y 400 caracteres.</p>
-            </div>
-
-            <button type="submit" class="pf-boton pf-boton-primario">Enviar mensaje</button>
-            <p id="mensaje-contacto" class="pf-mensaje" role="status" aria-live="polite" hidden></p>
-          </form>
-        </section>
-      </div>
+          <li class="pf-tarjeta flex flex-col p-6">
+            <h3 class="text-xl font-bold uppercase text-white">Nutrición</h3>
+            <p class="mt-2 flex-1 text-sm text-neutral-300">Evaluación, análisis personalizado y asesoría nutricional mediante cita.</p>
+            <a href="cliente/nutricion.html" class="pf-boton pf-boton-secundario mt-4 self-start">Ver nutrición</a>
+          </li>
+          <li class="pf-tarjeta flex flex-col p-6">
+            <h3 class="text-xl font-bold uppercase text-white">Contacto</h3>
+            <p class="mt-2 flex-1 text-sm text-neutral-300">Dirección, horarios de atención y formulario para escribirnos.</p>
+            <a href="cliente/contacto.html" class="pf-boton pf-boton-secundario mt-4 self-start">Ir a contacto</a>
+          </li>
+      </ul>
     </section>
   </main>
 
@@ -332,16 +150,14 @@
       <nav aria-label="Secciones del sitio">
         <h2 class="text-base font-bold text-white">Secciones</h2>
         <!-- Los enlaces llevan relleno vertical y son inline-block para que el
-             área táctil alcance los 24 px mínimos (WCAG 2.2 SC 2.5.8); con solo
-             el interlineado de `text-sm` el alto era de 20 px y el dedo pulsaba
-             el enlace equivocado en móvil. -->
+             área táctil alcance los 24 px mínimos (WCAG 2.2 SC 2.5.8). -->
         <ul class="mt-2 space-y-2 text-sm">
-          <li><a href="#planes" class="inline-block py-1 underline hover:text-pf-amarillo">Planes</a></li>
-          <li><a href="#tienda" class="inline-block py-1 underline hover:text-pf-amarillo">Tienda</a></li>
-          <li><a href="#clases" class="inline-block py-1 underline hover:text-pf-amarillo">Clases</a></li>
-          <li><a href="#rutinas" class="inline-block py-1 underline hover:text-pf-amarillo">Rutinas</a></li>
+          <li><a href="cliente/planes.html" class="inline-block py-1 underline hover:text-pf-amarillo">Planes</a></li>
+          <li><a href="cliente/tienda.html" class="inline-block py-1 underline hover:text-pf-amarillo">Tienda</a></li>
+          <li><a href="cliente/clases.html" class="inline-block py-1 underline hover:text-pf-amarillo">Clases</a></li>
+          <li><a href="cliente/rutinas.html" class="inline-block py-1 underline hover:text-pf-amarillo">Rutinas</a></li>
           <li><a href="cliente/nutricion.html" class="inline-block py-1 underline hover:text-pf-amarillo">Nutrición</a></li>
-          <li><a href="#contacto" class="inline-block py-1 underline hover:text-pf-amarillo">Contacto</a></li>
+          <li><a href="cliente/contacto.html" class="inline-block py-1 underline hover:text-pf-amarillo">Contacto</a></li>
         </ul>
       </nav>
       <nav aria-label="Accesos">

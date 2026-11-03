@@ -28,6 +28,11 @@ const leer = (relativa) => readFileSync(join(raiz, relativa), 'utf8');
 
 const PAGINAS = [
   'index.html',
+  'cliente/planes.html',
+  'cliente/tienda.html',
+  'cliente/clases.html',
+  'cliente/rutinas.html',
+  'cliente/contacto.html',
   'cliente/checkout.html',
   'cliente/login.html',
   'cliente/nutricion.html',
@@ -190,7 +195,7 @@ comprobar(
 /* Los únicos campos con autocomplete="name" son los que piden el nombre de la
    persona, no el de un producto o un plan. */
 const nombreDePersona = new Map([
-  ['index.html', 'nombre'],
+  ['cliente/contacto.html', 'nombre'],
   ['cliente/checkout.html', 'nombre'],
   ['cliente/nutricion.html', 'nombre'],
   ['cliente/login.html', 'nombre-registro']

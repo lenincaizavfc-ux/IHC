@@ -61,36 +61,6 @@ const select = (selector) => document.querySelector(selector);
 const selectTodos = (selector) => [...document.querySelectorAll(selector)];
 
 /* =========================================================
-   0. Gestión de ancla inicial (movido desde index.html)
-   ========================================================= */
-
-/* Llegar con un ancla (#rutinas, #planes…) no puede resolverse con el salto
-   nativo del navegador: cuando el documento termina de analizarse el
-   catálogo, las clases y los planes todavía no están pintados, así que la
-   altura de la página casi se duplica después. El navegador pintaba primero
-   el inicio y acto seguido saltaba a la sección, ese fogonazo de un instante.
-   Aquí se oculta el cuerpo (sin sacarlo de la maqueta) para que la primera
-   imagen que se ve sea ya la sección pedida. `js/app.js` quita la clase al
-   terminar de pintar los datos; los dos respaldos de abajo la quitan
-   también si el módulo llegara a fallar o si `load` se retrasara de
-   demasiado, para no dejar la página invisible. */
-if (location.hash) {
-  document.documentElement.classList.add('pf-posicion-pendiente');
-
-  // Rescate incondicional: si una imagen pesada o el CDN de Tailwind se
-  // cuelgan, `load` puede tardar mucho y el cuerpo seguiría oculto.
-  setTimeout(function () {
-    document.documentElement.classList.remove('pf-posicion-pendiente');
-  }, 800);
-
-  addEventListener('load', function () {
-    setTimeout(function () {
-      document.documentElement.classList.remove('pf-posicion-pendiente');
-    }, 600);
-  });
-}
-
-/* =========================================================
    1. Comportamiento común a todas las páginas
    ========================================================= */
 
@@ -238,174 +208,6 @@ function iniciarEncabezadoFijo() {
   actualizar();
 }
 
-/** Alto del encabezado fijo, más un pequeño margen de respiración. */
-function alturaEncabezado() {
-  const encabezado = select('.pf-encabezado');
-  if (!encabezado) return 0;
-  return Math.ceil(encabezado.getBoundingClientRect().height) + 8;
-}
-
-/**
- * Navegación interna de la página de inicio.
- *
- * El salto nativo del navegador a un ancla ocurre mientras la página todavía
- * muestra los marcadores «Cargando información...». Al inyectarse el catálogo,
- * las secciones de arriba crecen y el destino se desplaza, de modo que la
- * sección pedida quedaba a miles de píxeles y quien navegaba aterrizaba en
- * otra (Rutinas terminaba en Tienda, Tienda en Planes, y así con todas).
- *
- * Aquí el salto lo hace el código: se calcula el desplazamiento con la
- * posición real de la sección en el momento del clic, y se vuelve a alinear
- * cuando los datos y las imágenes ya han cambiado el alto del documento.
- */
-function iniciarNavegacionSecciones() {
-  const enlacesMenu = selectTodos('[data-menu] a[href^="#"]');
-  const enlacesInternos = selectTodos('main a[href^="#"], footer a[href^="#"]');
-  const enlaces = [...new Set([...enlacesMenu, ...enlacesInternos])];
-  if (enlacesMenu.length === 0) return;
-
-  const ids = [...new Set(enlaces.map((enlace) => enlace.getAttribute('href').slice(1)))].filter(Boolean);
-  // El orden del documento importa: `elegir()` supone que van de arriba abajo.
-  const secciones = ids
-    .map((id) => document.getElementById(id))
-    .filter(Boolean)
-    .sort((a, b) => a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
-  if (secciones.length === 0) return;
-
-  /**
-   * Lleva la vista a una sección dejando su título por debajo del encabezado.
-   * El salto es instantáneo a propósito: al navegar de Inicio a Nutrición (o
-   * desde Inscripción a Rutinas) la barra recorría toda la página y el
-   * desplazamiento animado mareaba más de lo que ayudaba. `instant` es
-   * necesario porque `html` declara `scroll-behavior: smooth`, que si no
-   * convertiría hasta un `behavior: "auto"` en salto animado.
-   */
-  const irA = (id) => {
-    const seccion = document.getElementById(id);
-    if (!seccion) return false;
-
-    const superior = Math.max(
-      window.scrollY + seccion.getBoundingClientRect().top - alturaEncabezado(),
-      0
-    );
-
-    window.scrollTo({ top: superior, left: 0, behavior: 'instant' });
-    return true;
-  };
-
-  /**
-   * Vuelve a colocar la vista donde dice la barra de direcciones. Se invoca
-   * tras pintar los datos y al terminar de cargar la página, que es cuando las
-   * secciones alcanzan su alto definitivo.
-   */
-  const alinearConHash = () => {
-    const id = window.location.hash.slice(1);
-    if (!id) return;
-    if (irA(id)) marcar(id);
-  };
-
-  /** Aplica el hash actual (o el inicio de la página si no hay ninguno). */
-  const sincronizar = () => {
-    const id = window.location.hash.slice(1);
-    if (!id) {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      marcar(secciones[0].id);
-      return;
-    }
-    if (irA(id)) marcar(id);
-  };
-
-  /** Resalta en el menú el enlace de la sección que se está viendo. */
-  const marcar = (id) => {
-    enlacesMenu.forEach((enlace) => {
-      const activo = enlace.getAttribute('href') === `#${id}`;
-      enlace.classList.toggle('pf-enlace-activo', activo);
-      if (activo) enlace.setAttribute('aria-current', 'location');
-      else enlace.removeAttribute('aria-current');
-    });
-  };
-
-  /**
-   * Destapa la página cuando la posición ya es la definitiva.
-   *
-   * Al llegar con un ancla (`index.html#rutinas` desde Inscripción, por ejemplo)
-   * `index.html` oculta el cuerpo con `pf-posicion-pendiente`: sin eso se veía un
-   * fogonazo del inicio, porque hasta que el catálogo no está pintado la altura
-   * real de la sección es otra. Se quita en cuanto `alinearConHash()` deja la
-   * sección bajo el encabezado.
-   */
-  const revelarPagina = () => {
-    document.documentElement.classList.remove('pf-posicion-pendiente');
-  };
-
-  /* Todo enlace interno (menú, botones del hero y pie) salta a su sección. */
-  document.addEventListener('click', (evento) => {
-    if (evento.defaultPrevented || evento.button !== 0) return;
-    if (evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.altKey) return;
-
-    const enlace = evento.target.closest('a[href^="#"]');
-    if (!enlace || enlace.hasAttribute('download')) return;
-
-    const id = enlace.getAttribute('href').slice(1);
-    if (!id || !document.getElementById(id)) return;
-
-    evento.preventDefault();
-
-    // «Inicio» se representa sin ancla: es la dirección limpia de la página.
-    const hash = id === 'inicio' ? '' : `#${id}`;
-    if (window.location.hash !== hash) {
-      history.pushState(null, '', hash || window.location.pathname);
-    }
-
-    if (id === 'inicio') {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    } else {
-      irA(id);
-    }
-    marcar(id);
-  });
-
-  /* Atrás/adelante y cambios de ancla hechos a mano se respetan. */
-  window.addEventListener('popstate', sincronizar);
-  window.addEventListener('hashchange', sincronizar);
-
-  /* Las imágenes y el catálogo cambian el alto del documento al cargar. */
-  window.addEventListener('load', () => requestAnimationFrame(alinearConHash));
-
-  const elegir = () => {
-    const linea = window.innerHeight * 0.4;
-    let actual = secciones[0];
-    for (const seccion of secciones) {
-      if (seccion.getBoundingClientRect().top <= linea) actual = seccion;
-    }
-    const fondoDePagina = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
-    if (fondoDePagina) actual = secciones[secciones.length - 1];
-    marcar(actual.id);
-  };
-
-  if ('IntersectionObserver' in window) {
-    const observador = new IntersectionObserver(elegir, {
-      rootMargin: '-40% 0px -55% 0px',
-      threshold: [0, 1]
-    });
-    secciones.forEach((seccion) => observador.observe(seccion));
-  }
-
-  let programado = false;
-  window.addEventListener('scroll', () => {
-    if (programado) return;
-    programado = true;
-    requestAnimationFrame(() => {
-      programado = false;
-      elegir();
-    });
-  }, { passive: true });
-
-  elegir();
-
-  return { alinearConHash, revelarPagina };
-}
-
 /** Botón de cierre de sesión presente en las páginas del cliente. */
 function iniciarCierreSesion() {
   selectTodos('[data-cerrar-sesion]').forEach((boton) => {
@@ -465,7 +267,7 @@ function iniciarComunes() {
 }
 
 /* =========================================================
-   2. Página principal (index.html)
+   2. Páginas públicas (index.html y las secciones de cliente/)
    ========================================================= */
 
 /** Rellena los datos fijos del gimnasio (dirección, correo y horarios). */
@@ -523,7 +325,7 @@ async function pintarDatosGimnasio() {
   }
 }
 
-/** Formulario de contacto de la página principal. */
+/** Formulario de contacto de cliente/contacto.html. */
 function iniciarFormularioContacto() {
   const formulario = select('#formulario-contacto');
   if (!formulario) return;
@@ -548,32 +350,46 @@ function iniciarFormularioContacto() {
 }
 
 /**
- * Página principal: una sola página con todas las secciones.
- * Cada bloque se pinta solo si su contenedor existe en el documento,
- * de modo que el mismo código sirve para el index completo y para
- * páginas de sección que aún se mantienen.
+ * Páginas públicas del sitio multipágina.
+ *
+ * Cada sección del menú es su propio archivo HTML (index.html y
+ * cliente/planes.html, tienda.html, clases.html, rutinas.html,
+ * contacto.html). Todas rellenan los datos del gimnasio que aparecen en el
+ * pie y, además, dibujan solo el contenido de su página.
  */
+
+/** Inicio: hero y tarjetas de acceso a cada página. */
 async function iniciarPaginaInicio() {
-  const region = select('#mensaje-dinamico');
+  await pintarDatosGimnasio();
+}
 
-  // Los enlaces se conectan antes de pintar: así un clic nunca cae en el
-  // salto nativo del navegador, que es el que devolvía otra sección.
-  const navegacion = iniciarNavegacionSecciones();
+/** Planes: catálogo de planes y «Cómo elegir tu plan». */
+async function iniciarPaginaPlanes() {
+  await pintarDatosGimnasio();
+  await pintarPlanes(select('#mensaje-dinamico'));
+}
 
-  try {
-    await pintarDatosGimnasio();
-    await pintarPlanes(region);
-    await pintarCatalogoProductos(region);
-    await pintarClases(region);
-    iniciarFormularioContacto();
-  } finally {
-    // El catálogo ya ocupa su alto real: el destino del ancla es el bueno.
-    navegacion?.alinearConHash();
-    // Solo ahora se muestra la página, ya en la sección pedida y sin el
-    // fogonazo del inicio. El respaldo del script de `index.html` cubre el
-    // caso de que este módulo llegara a fallar antes de llegar aquí.
-    navegacion?.revelarPagina();
-  }
+/** Tienda: productos agrupados por categoría. */
+async function iniciarPaginaTienda() {
+  await pintarDatosGimnasio();
+  await pintarCatalogoProductos(select('#mensaje-dinamico'));
+}
+
+/** Clases: tarjetas de cada actividad y entrenadores. */
+async function iniciarPaginaClases() {
+  await pintarDatosGimnasio();
+  await pintarClases(select('#mensaje-dinamico'));
+}
+
+/** Rutinas: niveles y servicios (vienen de gimnasio.json). */
+async function iniciarPaginaRutinas() {
+  await pintarDatosGimnasio();
+}
+
+/** Contacto: dirección, horarios y formulario con sus validaciones. */
+async function iniciarPaginaContacto() {
+  iniciarFormularioContacto();
+  await pintarDatosGimnasio();
 }
 
 /* =========================================================
@@ -1067,12 +883,16 @@ function iniciarPaginaLogin() {
 
 /**
  * Controladores disponibles, uno por cada `data-pagina`.
- * El sitio público es una sola página (`inicio`); el resto de
- * páginas del cliente (checkout, nutrición y login) conservan su
- * propio controlador.
+ * El sitio es multipágina: cada sección del menú tiene su archivo HTML
+ * y su propio controlador.
  */
 const PAGINAS = {
   inicio: iniciarPaginaInicio,
+  planes: iniciarPaginaPlanes,
+  tienda: iniciarPaginaTienda,
+  clases: iniciarPaginaClases,
+  rutinas: iniciarPaginaRutinas,
+  contacto: iniciarPaginaContacto,
   checkout: iniciarPaginaCheckout,
   nutricion: iniciarPaginaNutricion,
   login: iniciarPaginaLogin

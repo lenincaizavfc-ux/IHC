@@ -386,17 +386,6 @@ body {
   overflow-x: clip;
 }
 
-/* Al entrar con un ancla, el alto del documento aún no es el definitivo: el
-   catálogo, las clases y los planes se inyectan después y casi duplican la
-   altura de la página. El salto nativo cae en mitad de ese crecimiento y se veía
-   un fogonazo del inicio antes de bajar a la sección. `visibility: hidden`
-   esconde el contenido sin sacarlo de la maqueta, de modo que la barra de
-   desplazamiento conserva su ancho y la primera imagen pintada es ya la sección
-   pedida. La clase la pone el script de `index.html` y la quita `js/app.js`. */
-html.pf-posicion-pendiente body {
-  visibility: hidden;
-}
-
 /* El tema oscuro (negro + texto blanco) es el del área cliente, la que usa
    Tailwind. El panel de administración usa Bootstrap sobre fondo claro y tiene
    su propio bloque de color al final de esta hoja (`.pf-admin`). */

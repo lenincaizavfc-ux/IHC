@@ -95,180 +95,121 @@ pagina.on('console', (m) => {
   if (m.type() === 'error') errores.push(`consola: ${m.text()}`);
 });
 
-/* ---------- 1. Inicio ---------- */
-await pagina.goto(`${BASE}/index.html`, { waitUntil: 'networkidle' });
-// Se fuerza la carga de las imágenes diferidas antes de verificarlas.
-await pagina.evaluate(async () => {
-  document.querySelectorAll('img[loading="lazy"]').forEach((i) => i.setAttribute('loading', 'eager'));
-  await Promise.all(
-    [...document.images].map((i) =>
-      i.complete ? null : new Promise((r) => { i.onload = r; i.onerror = r; })
-    )
+/* ---------- 1. Sitio multipágina: cada sección es su propio archivo ---------- */
+
+/** Fuerza la carga de las imágenes diferidas y devuelve las que no cargaron. */
+async function imagenesRotas() {
+  await pagina.evaluate(async () => {
+    document.querySelectorAll('img[loading="lazy"]').forEach((i) => i.setAttribute('loading', 'eager'));
+    await Promise.all(
+      [...document.images].map((i) =>
+        i.complete ? null : new Promise((r) => { i.onload = r; i.onerror = r; })
+      )
+    );
+  });
+  return pagina.evaluate(() =>
+    [...document.images]
+      .filter((i) => !i.complete || i.naturalWidth === 0)
+      .map((i) => i.getAttribute('src'))
   );
-});
-const rotas = await pagina.evaluate(() =>
-  [...document.images]
-    .filter((i) => !i.complete || i.naturalWidth === 0)
-    .map((i) => i.getAttribute('src'))
-);
+}
+
+await pagina.goto(`${BASE}/index.html`, { waitUntil: 'networkidle' });
+const rotasInicio = await imagenesRotas();
 comprobar(
   'El h1 del inicio es correcto',
   (await pagina.locator('h1').innerText()).toLowerCase().includes('entrena')
 );
+comprobar('El inicio ya no contiene las secciones movidas',
+  (await pagina.locator('[data-planes], [data-catalogo], [data-clases], [data-niveles], #formulario-contacto, section#nutricion').count()) === 0);
+comprobar('El inicio ofrece una tarjeta por cada página',
+  (await pagina.locator('main a[href^="cliente/"]').count()) >= 6);
+comprobar('No hay imágenes rotas en el inicio', rotasInicio.length === 0, rotasInicio.join(', '));
+
+/* Cada página carga, tiene su título, su h1 y marca su enlace como actual. */
+const PAGINAS_SITIO = [
+  { ruta: 'index.html', menu: 'Inicio', h1: 'entrena' },
+  { ruta: 'cliente/planes.html', menu: 'Planes', h1: 'planes' },
+  { ruta: 'cliente/tienda.html', menu: 'Tienda', h1: 'tienda' },
+  { ruta: 'cliente/clases.html', menu: 'Clases', h1: 'clases' },
+  { ruta: 'cliente/rutinas.html', menu: 'Rutinas', h1: 'rutinas' },
+  { ruta: 'cliente/nutricion.html', menu: 'Nutrición', h1: 'nutrición' },
+  { ruta: 'cliente/contacto.html', menu: 'Contacto', h1: 'contacto' }
+];
+for (const { ruta, menu, h1 } of PAGINAS_SITIO) {
+  const respuesta = await pagina.goto(`${BASE}/${ruta}`, { waitUntil: 'networkidle' });
+  const activos = await pagina.locator('header a.pf-enlace-activo').allInnerTexts();
+  const actual = await pagina.locator('header a[aria-current="page"]').allInnerTexts();
+  comprobar(`${ruta} responde 200`, respuesta?.status() === 200, String(respuesta?.status()));
+  comprobar(`${ruta} tiene un solo h1 con su título`,
+    (await pagina.locator('h1').count()) === 1 &&
+      (await pagina.locator('h1').innerText()).toLowerCase().includes(h1));
+  comprobar(`${ruta} marca "${menu}" como página actual`,
+    activos.length === 1 && actual.length === 1 && activos[0].trim() === menu && actual[0].trim() === menu,
+    `activos: ${activos.join(', ')} | aria-current: ${actual.join(', ')}`);
+  comprobar(`${ruta} no deja la página oculta`,
+    await pagina.evaluate(() => getComputedStyle(document.body).visibility !== 'hidden'));
+}
+
+/* Los enlaces del menú cargan la página real, sin anclas. */
+await pagina.goto(`${BASE}/index.html`, { waitUntil: 'networkidle' });
+await pagina.click('header a.pf-enlace:has-text("Clases")');
+await pagina.waitForLoadState('networkidle');
+comprobar('El menú lleva a cliente/clases.html', new URL(pagina.url()).pathname.endsWith('/cliente/clases.html'), pagina.url());
+comprobar('La URL no lleva ancla', new URL(pagina.url()).hash === '');
+await pagina.click('header a.pf-enlace:has-text("Contacto")');
+await pagina.waitForLoadState('networkidle');
+comprobar('Desde cliente/ el menú lleva a contacto.html', new URL(pagina.url()).pathname.endsWith('/cliente/contacto.html'), pagina.url());
+await pagina.click('header a.pf-enlace:has-text("Inicio")');
+await pagina.waitForLoadState('networkidle');
+comprobar('Desde cliente/ "Inicio" vuelve a index.html', new URL(pagina.url()).pathname.endsWith('/index.html'), pagina.url());
+await pagina.click('main a:has-text("Ver planes")');
+await pagina.waitForLoadState('networkidle');
+comprobar('"Ver planes" del inicio abre cliente/planes.html', new URL(pagina.url()).pathname.endsWith('/cliente/planes.html'), pagina.url());
+
+/* Contenido dibujado desde los JSON en cada página. */
+await pagina.goto(`${BASE}/cliente/planes.html`, { waitUntil: 'networkidle' });
 comprobar('Se pintan 3 planes', (await pagina.locator('[data-planes] article').count()) === 3);
-comprobar('Se pintan 10 productos de la tienda', (await pagina.locator('[data-catalogo] article').count()) === 10);
+comprobar('Planes incluye "Cómo elegir tu plan"', (await pagina.locator('#titulo-como-contratar').count()) === 1);
+
+await pagina.goto(`${BASE}/cliente/clases.html`, { waitUntil: 'networkidle' });
+const rotasClases = await imagenesRotas();
 comprobar('Se pintan 2 clases', (await pagina.locator('[data-clases] article').count()) === 2);
 comprobar('Se pintan 3 entrenadores', (await pagina.locator('[data-entrenadores] article').count()) === 3);
-comprobar('La sección de clases ya no usa ninguna tabla', (await pagina.locator('section#clases table').count()) === 0);
+comprobar('La página de clases no usa ninguna tabla', (await pagina.locator('main table').count()) === 0);
 comprobar('Las tarjetas de clase muestran los 5 horarios', (await pagina.locator('[data-clases] .pf-clase-horario').count()) === 5);
+comprobar('No hay imágenes rotas en clases', rotasClases.length === 0, rotasClases.join(', '));
+
+await pagina.goto(`${BASE}/cliente/rutinas.html`, { waitUntil: 'networkidle' });
+const rotasRutinas = await imagenesRotas();
 comprobar('Se pintan 6 servicios', (await pagina.locator('[data-servicios] article').count()) === 6);
 comprobar('Se pintan 3 niveles de rutina', (await pagina.locator('[data-niveles] li').count()) === 3);
+comprobar('No hay imágenes rotas en rutinas', rotasRutinas.length === 0, rotasRutinas.join(', '));
+
+await pagina.goto(`${BASE}/cliente/contacto.html`, { waitUntil: 'networkidle' });
 comprobar('Se muestran 3 horarios del gimnasio', (await pagina.locator('[data-gimnasio-horarios] li').count()) === 3);
-comprobar('No hay imágenes rotas', rotas.length === 0, rotas.join(', '));
+await pagina.click('#formulario-contacto button[type="submit"]');
+await pagina.waitForTimeout(200);
+comprobar('El formulario de contacto vacío marca campos inválidos',
+  (await pagina.locator('#formulario-contacto [aria-invalid="true"]').count()) >= 4);
+comprobar('El foco salta al primer campo inválido', await pagina.evaluate(() => document.activeElement?.id === 'nombre'));
+await pagina.fill('#nombre', 'Ana Pérez');
+await pagina.fill('#correo', 'ana@correo.com');
+await pagina.fill('#telefono', '1234');
+await pagina.fill('#mensaje', 'Quiero información de los planes.');
+await pagina.click('#formulario-contacto button[type="submit"]');
+await pagina.waitForTimeout(200);
+comprobar('Un teléfono inválido se rechaza', (await pagina.getAttribute('#telefono', 'aria-invalid')) === 'true');
+await pagina.fill('#telefono', '0991234567');
+await pagina.click('#formulario-contacto button[type="submit"]');
+await esperarTextoEn('#mensaje-contacto', 'Mensaje enviado');
+comprobar('El formulario de contacto válido se envía',
+  (await pagina.locator('#mensaje-contacto').innerText()).includes('Mensaje enviado'));
+comprobar('El mensaje queda guardado en localStorage',
+  await pagina.evaluate(() => (JSON.parse(localStorage.getItem('mensajesContacto') || '[]')).length >= 1));
 
-/* Navegación de una sola página: los enlaces del encabezado son anchors. */
-await pagina.click('header a[href="#tienda"]');
-await pagina.waitForTimeout(600);
-comprobar('El enlace de la nav lleva a #tienda', pagina.url().endsWith('#tienda'));
-comprobar('La sección #tienda existe en el documento', (await pagina.locator('section#tienda').count()) === 1);
-comprobar('Todas las secciones de la página están presentes', (await pagina.locator('section#inicio, section#planes, section#tienda, section#clases, section#rutinas, section#contacto').count()) === 6);
-
-/* Navegación activa: el enlace de la sección visible se marca solo. */
-await pagina.goto(`${BASE}/index.html`, { waitUntil: 'networkidle' });
-await pagina.waitForTimeout(300);
-comprobar('El enlace Inicio aparece activo al cargar', await pagina.locator('header a.pf-enlace[href="#inicio"]').evaluate((a) => a.classList.contains('pf-enlace-activo')));
-await pagina.locator('header a.pf-enlace[href="#clases"]').click();
-await pagina.waitForTimeout(1000);
-comprobar('Al navegar a Clases su enlace queda activo', (await pagina.locator('header a.pf-enlace[href="#clases"]').getAttribute('aria-current')) === 'location');
-comprobar('Solo un enlace del menú queda activo', (await pagina.locator('header a.pf-enlace-activo').count()) === 1);
-comprobar('La sección #nutricion existe y está enlazada',
-  (await pagina.locator('section#nutricion').count()) === 1 &&
-  (await pagina.locator('header a.pf-enlace[href="#nutricion"]').count()) === 1);
-
-/* Cada botón del menú debe dejar su sección delante del encabezado.
-   El salto nativo a un ancla ocurría antes de que el catálogo estuviera
-   pintado: al crecer las secciones de arriba, el destino se quedaba miles
-   de píxeles más abajo y quien navegaba aterrizaba en otra sección
-   (Rutinas terminaba en Tienda y Tienda en Planes). */
-async function esperarSeccionArriba(id) {
-  await pagina.waitForFunction(
-    (destino) => {
-      const seccion = document.getElementById(destino);
-      const encabezado = document.querySelector('.pf-encabezado');
-      if (!seccion || !encabezado) return false;
-      const alto = encabezado.getBoundingClientRect().height;
-      const top = seccion.getBoundingClientRect().top;
-      return top >= alto - 4 && top <= alto + 48;
-    },
-    id,
-    { timeout: ESPERA_DOM }
-  ).catch(() => {});
-}
-
-const SECCIONES_MENU = ['inicio', 'planes', 'tienda', 'clases', 'rutinas', 'nutricion', 'contacto'];
-for (const destino of SECCIONES_MENU) {
-  await pagina.goto(`${BASE}/index.html`, { waitUntil: 'networkidle' });
-  await pagina.locator(`header a.pf-enlace[href="#${destino}"]`).click();
-  await esperarSeccionArriba(destino);
-  const enPantalla = await pagina.evaluate((id) => {
-    const seccion = document.getElementById(id);
-    const encabezado = document.querySelector('.pf-encabezado');
-    const alto = encabezado.getBoundingClientRect().height;
-    const caja = seccion.getBoundingClientRect();
-    return caja.top >= alto - 4 && caja.top <= alto + 48 && caja.bottom > window.innerHeight * 0.2;
-  }, destino);
-  comprobar(`El botón de menú "${destino}" deja esa sección a la vista`, enPantalla,
-    `hash=${await pagina.evaluate(() => location.hash)}`);
-}
-
-/* La barra de direcciones manda: una URL con ancla o una recarga deben
-   terminar en la sección pedida, no en otra. */
-for (const destino of ['tienda', 'clases', 'rutinas', 'nutricion', 'contacto']) {
-  await pagina.goto(`${BASE}/index.html#${destino}`, { waitUntil: 'networkidle' });
-  await esperarSeccionArriba(destino);
-  const enPantalla = await pagina.evaluate((id) => {
-    const caja = document.getElementById(id).getBoundingClientRect();
-    const alto = document.querySelector('.pf-encabezado').getBoundingClientRect().height;
-    return caja.top >= alto - 4 && caja.top <= alto + 48;
-  }, destino);
-  comprobar(`Cargar index.html#${destino} aterriza en esa sección`, enPantalla);
-}
-
-/* El salto es instantáneo: con `scroll-behavior: smooth` en el CSS la barra
-   recorría toda la página y el desplazamiento animado incomodaba al navegar
-   de Inicio a Nutrición o desde Inscripción a Rutinas. */
-await pagina.goto(`${BASE}/index.html`, { waitUntil: 'networkidle' });
-await pagina.evaluate(() => {
-  window.__saltos = 0;
-  window.addEventListener('scroll', () => { window.__saltos += 1; }, { passive: true });
-});
-for (const [origen, destino] of [['inicio', 'nutricion'], ['nutricion', 'contacto'], ['inicio', 'rutinas']]) {
-  await pagina.locator(`header a.pf-enlace[href="#${origen}"]`).click();
-  await esperarSeccionArriba(origen);
-  await pagina.evaluate(() => { window.__saltos = 0; });
-  await pagina.locator(`header a.pf-enlace[href="#${destino}"]`).click();
-  await esperarSeccionArriba(destino);
-  const saltos = await pagina.evaluate(() => window.__saltos);
-  comprobar(`De #${origen} a #${destino} el salto es instantáneo`, saltos <= 2, `eventos de scroll: ${saltos}`);
-}
-
-/* Al entrar con un ancla desde otra página no debe verse el inicio antes de la
-   sección: el navegador pintaba arriba porque el catálogo todavía no estaba, y
-   al inyectarse la página bajaba a la sección (fogonazo). `index.html` oculta el
-   cuerpo hasta que los datos están pintados, así que se cuenta cada fotograma en
-   el que la página ya es visible y aun así no está en la sección pedida. Se usa
-   un contexto aparte porque `addInitScript` no se puede quitar después. */
-const contextoFogonazo = await navegador.newContext({ viewport: { width: 1280, height: 900 } });
-const paginaFogonazo = await contextoFogonazo.newPage();
-await paginaFogonazo.addInitScript(() => {
-  window.__fogonazos = 0;
-  const revisar = () => {
-    const id = location.hash.slice(1);
-    if (!id || id === 'inicio') return;
-    if (getComputedStyle(document.body).visibility === 'hidden') return;
-    const seccion = document.getElementById(id);
-    const encabezado = document.querySelector('.pf-encabezado');
-    if (!seccion || !encabezado) return;
-    const alto = encabezado.getBoundingClientRect().height;
-    const top = seccion.getBoundingClientRect().top;
-    if (top < alto - 4 || top > alto + 48) window.__fogonazos += 1;
-  };
-  const bucle = () => {
-    revisar();
-    requestAnimationFrame(bucle);
-  };
-  requestAnimationFrame(bucle);
-  addEventListener('scroll', revisar, { passive: true });
-  addEventListener('DOMContentLoaded', revisar);
-  addEventListener('load', revisar);
-});
-
-/* Sin ancla no se oculta nada: la portada debe verse desde el primer momento. */
-await paginaFogonazo.goto(`${BASE}/index.html`, { waitUntil: 'domcontentloaded' });
-comprobar('La portada sin ancla no se oculta al cargar',
-  await paginaFogonazo.evaluate(() => !document.documentElement.classList.contains('pf-posicion-pendiente')));
-
-for (const destino of ['planes', 'tienda', 'clases', 'rutinas', 'contacto']) {
-  await paginaFogonazo.goto(`${BASE}/cliente/login.html`, { waitUntil: 'networkidle' });
-  await paginaFogonazo.goto(`${BASE}/index.html#${destino}`, { waitUntil: 'networkidle' });
-  await paginaFogonazo.waitForTimeout(500);
-  const r = await paginaFogonazo.evaluate(() => ({
-    fogonazos: window.__fogonazos,
-    visible: getComputedStyle(document.body).visibility !== 'hidden'
-  }));
-  comprobar(`Desde Inscripción a #${destino} no se ve el inicio antes de la sección`,
-    r.fogonazos === 0 && r.visible,
-    `fotogramas fuera de sección: ${r.fogonazos}, cuerpo visible: ${r.visible}`);
-}
-await contextoFogonazo.close();
-
-/* Entrar por la raíz muestra el inicio, nunca otra sección. */
-await pagina.goto(`${BASE}/index.html`, { waitUntil: 'networkidle' });
-await pagina.waitForTimeout(400);
-comprobar('La raíz del sitio abre en Inicio', await pagina.evaluate(() => window.scrollY === 0));
-
-/* ---------- 2. Productos por categorías (sección #tienda) ---------- */
-await pagina.goto(`${BASE}/index.html#tienda`, { waitUntil: 'networkidle' });
+/* ---------- 2. Productos por categorías (cliente/tienda.html) ---------- */
+await pagina.goto(`${BASE}/cliente/tienda.html`, { waitUntil: 'networkidle' });
 comprobar('El catálogo trae 10 productos del JSON', (await pagina.locator('[data-catalogo] article').count()) === 10);
 comprobar('La tienda ya no depende de filtros', (await pagina.locator('#filtro-categoria, [data-filtrar], [data-limpiar-filtros], #busqueda-productos').count()) === 0);
 const seccionesTienda = pagina.locator('[data-catalogo] > section.pf-tienda-categoria');
@@ -276,11 +217,11 @@ comprobar('La tienda agrupa los productos en 3 categorías', (await seccionesTie
 comprobar('La primera categoría es Suplementos con 4 productos', (await seccionesTienda.nth(0).locator('article').count()) === 4);
 comprobar('La segunda categoría es Ropa con 3 productos', (await seccionesTienda.nth(1).locator('article').count()) === 3);
 comprobar('La tercera categoría es Accesorios con 3 productos', (await seccionesTienda.nth(2).locator('article').count()) === 3);
-comprobar('Los títulos de categoría usan h3', (await pagina.locator('[data-catalogo] h3.pf-tienda-titulo').count()) === 3);
+comprobar('Los títulos de categoría usan h2 bajo el h1 Tienda', (await pagina.locator('[data-catalogo] h2.pf-tienda-titulo').count()) === 3);
 /* `innerText` devuelve el texto ya transformado por CSS, y los títulos de
    categoría van en mayúsculas (`text-transform`), así que se comparan en
    minúsculas. */
-const titulosCategoria = (await seccionesTienda.locator('h3.pf-tienda-titulo').allInnerTexts())
+const titulosCategoria = (await seccionesTienda.locator('h2.pf-tienda-titulo').allInnerTexts())
   .map((t) => t.trim().toLowerCase());
 comprobar(
   'Las categorías aparecen en el orden del JSON',
@@ -303,7 +244,7 @@ await pagina.locator('[data-catalogo] article button[data-accion="agregar"]').nt
 await pagina.locator('[data-catalogo] article button[data-accion="agregar"]').nth(1).click();
 await pagina.waitForTimeout(200);
 comprobar('El contador del carrito muestra 2', (await contadorCarrito('2')));
-comprobar('Agregar al carrito no exige sesión', pagina.url().includes('index.html'));
+comprobar('Agregar al carrito no exige sesión', pagina.url().includes('tienda.html'));
 comprobar('El panel lateral está inyectado', (await pagina.locator('[data-panel-carrito]').count()) === 1);
 comprobar('El panel lateral arranca cerrado', await pagina.locator('[data-panel-carrito]').isHidden());
 
@@ -434,8 +375,17 @@ await pagina.locator('[data-catalogo] article button[data-accion="agregar"]').nt
 await pagina.waitForTimeout(200);
 await pagina.goto(`${BASE}/index.html`, { waitUntil: 'networkidle' });
 comprobar('El carrito sobrevive al cambio de página', (await contadorCarrito('1')));
+for (const otra of ['cliente/clases.html', 'cliente/rutinas.html', 'cliente/contacto.html']) {
+  await pagina.goto(`${BASE}/${otra}`, { waitUntil: 'networkidle' });
+  comprobar(`El contador del carrito se mantiene en ${otra}`, (await contadorCarrito('1')) === '1');
+  await abrirPanel();
+  comprobar(`El panel lateral se abre en ${otra}`, await pagina.locator('[data-panel-carrito]').isVisible());
+  await pagina.keyboard.press('Escape');
+  await esperar();
+}
+await pagina.goto(`${BASE}/cliente/planes.html`, { waitUntil: 'networkidle' });
 await abrirPanel();
-comprobar('El panel se puede abrir desde el inicio', await pagina.locator('[data-panel-carrito]').isVisible());
+comprobar('El panel se puede abrir desde la página de planes', await pagina.locator('[data-panel-carrito]').isVisible());
 await pagina.click('[data-panel-vaciar]');
 await esperar();
 comprobar('El carrito queda limpio para el flujo de planes', (await contadorCarrito('0')));
@@ -448,7 +398,7 @@ comprobar('El carrito arranca vacío para el flujo de plan', (await contadorCarr
 
 await pagina.click('article[data-plan="1"] button[data-accion="elegir-plan"]');
 await esperar();
-comprobar('Elegir plan no exige sesión', pagina.url().includes('index.html'));
+comprobar('Elegir plan no exige sesión', pagina.url().includes('planes.html'));
 comprobar('Elegir plan abre el panel lateral', await pagina.locator('[data-panel-carrito]').isVisible());
 comprobar('El panel lista el plan mensual', (await pagina.locator('[data-panel-lineas] li:first-child').innerText()).includes('Plan mensual'));
 comprobar('El total del plan individual es $35.00', (await pagina.locator('[data-panel-total]').innerText()) === '$35.00');
@@ -555,7 +505,7 @@ comprobar(
 );
 
 /* ---------- 6 bis. Flujo de compra: carrito, modal de acceso y checkout ---------- */
-await pagina.goto(`${BASE}/index.html#tienda`, { waitUntil: 'networkidle' });
+await pagina.goto(`${BASE}/cliente/tienda.html`, { waitUntil: 'networkidle' });
 await pagina.locator('[data-catalogo] article button[data-accion="agregar"]').nth(0).click();
 await pagina.locator('[data-catalogo] article button[data-accion="agregar"]').nth(1).click();
 await pagina.waitForTimeout(200);
@@ -690,8 +640,8 @@ for (const intento of [1, 2]) {
     await paginaCookies.locator('[data-aviso-cookies]').isHidden());
 }
 
-/* La aceptación es del sitio completo, no de una página: sirve para las cuatro. */
-for (const otra of ['cliente/login.html', 'cliente/checkout.html', 'cliente/nutricion.html']) {
+/* La aceptación es del sitio completo, no de una página: sirve para todas. */
+for (const otra of ['cliente/planes.html', 'cliente/tienda.html', 'cliente/clases.html', 'cliente/rutinas.html', 'cliente/contacto.html', 'cliente/login.html', 'cliente/checkout.html', 'cliente/nutricion.html']) {
   await paginaCookies.goto(`${BASE}/${otra}`, { waitUntil: 'networkidle' });
   const pintado = await paginaCookies.evaluate(() => window.__avisoPintado);
   comprobar(`El aviso no reaparece en ${otra}`, pintado === 0 && await paginaCookies.locator('[data-aviso-cookies]').isHidden(),
@@ -753,7 +703,7 @@ await pagina.click('#formulario-producto button[type="submit"]');
 await esperarTextoEn('[data-tabla-productos] tr:first-child', '48.00');
 comprobar('El producto editado muestra el precio nuevo', (await pagina.locator('[data-tabla-productos] tr:first-child').innerText()).includes('48.00'));
 
-await pagina.goto(`${BASE}/index.html#tienda`, { waitUntil: 'networkidle' });
+await pagina.goto(`${BASE}/cliente/tienda.html`, { waitUntil: 'networkidle' });
 await esperarTextoEn('[data-catalogo]', '$48.00');
 comprobar('El sitio público ve el cambio del administrador', (await pagina.locator('[data-catalogo]').innerText()).includes('$48.00'));
 
@@ -833,13 +783,13 @@ await pagina.keyboard.press('Escape');
 await pagina.waitForTimeout(200);
 comprobar('Escape cierra el menú móvil', await pagina.locator('[data-menu]').isHidden());
 await pagina.click('[data-menu-boton]');
-await pagina.click('[data-menu] a[href="#planes"]');
-await pagina.waitForTimeout(600);
-comprobar('Elegir una sección cierra el menú móvil', await pagina.locator('[data-menu]').isHidden());
+await pagina.click('[data-menu] a[href="cliente/planes.html"]');
+await pagina.waitForLoadState('networkidle');
+comprobar('Elegir una página cierra el menú móvil', await pagina.locator('[data-menu]').isHidden());
 comprobar('Sin desbordamiento horizontal en móvil', await pagina.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 
 await pagina.setViewportSize({ width: 768, height: 900 });
-await pagina.goto(`${BASE}/index.html#tienda`, { waitUntil: 'networkidle' });
+await pagina.goto(`${BASE}/cliente/tienda.html`, { waitUntil: 'networkidle' });
 comprobar('Sin desbordamiento horizontal en tablet', await pagina.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 
 const ignorables = errores.filter((e) => !e.includes('favicon'));

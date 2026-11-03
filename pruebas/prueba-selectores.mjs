@@ -16,6 +16,11 @@ const raiz = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const PAGINAS = [
   { archivo: 'index.html', script: 'js/app.js', clave: 'inicio' },
+  { archivo: 'cliente/planes.html', script: 'js/app.js', clave: 'planes' },
+  { archivo: 'cliente/tienda.html', script: 'js/app.js', clave: 'tienda' },
+  { archivo: 'cliente/clases.html', script: 'js/app.js', clave: 'clases' },
+  { archivo: 'cliente/rutinas.html', script: 'js/app.js', clave: 'rutinas' },
+  { archivo: 'cliente/contacto.html', script: 'js/app.js', clave: 'contacto' },
   { archivo: 'cliente/checkout.html', script: 'js/app.js', clave: 'checkout' },
   { archivo: 'cliente/nutricion.html', script: 'js/app.js', clave: 'nutricion' },
   { archivo: 'cliente/login.html', script: 'js/app.js', clave: 'login' },
@@ -26,15 +31,22 @@ const PAGINAS = [
   { archivo: 'admin/entrenadores.html', script: 'js/admin.js', clave: 'entrenadores' }
 ];
 
-/** Secciones que la página principal debe exponer como anchors. */
-const SECCIONES_INDEX = ['inicio', 'planes', 'tienda', 'clases', 'rutinas', 'nutricion', 'contacto'];
+/** Páginas del menú principal: cada sección es su propio archivo HTML. */
+const MENU = [
+  { texto: 'Inicio', archivo: 'index.html' },
+  { texto: 'Planes', archivo: 'cliente/planes.html' },
+  { texto: 'Tienda', archivo: 'cliente/tienda.html' },
+  { texto: 'Clases', archivo: 'cliente/clases.html' },
+  { texto: 'Rutinas', archivo: 'cliente/rutinas.html' },
+  { texto: 'Nutrición', archivo: 'cliente/nutricion.html' },
+  { texto: 'Contacto', archivo: 'cliente/contacto.html' }
+];
 
-/** Páginas de sección que ya no deben enlazarse desde el index. */
-const RUTAS_LEGADAS = [
-  'cliente/planes.html',
-  'cliente/productos.html',
-  'cliente/clases.html',
-  'cliente/carrito.html'
+/** Páginas públicas que muestran el menú principal completo. */
+const PAGINAS_CON_MENU = [
+  ...MENU.map((m) => m.archivo),
+  'cliente/login.html',
+  'cliente/checkout.html'
 ];
 
 /** Devuelve el cuerpo de la función declarada con `nombre`. */
@@ -140,18 +152,58 @@ for (const { archivo, script, clave } of PAGINAS) {
   if (body) comprobar(`${archivo}: data-pagina="${body}"`, body === clave, `esperado ${clave}`);
 }
 
-/* La página principal concentra todas las secciones y la navegación. */
-const htmlIndex = readFileSync(join(raiz, 'index.html'), 'utf8');
+/* Sitio multipágina: el menú principal es el mismo en todas las páginas,
+   cada enlace va a su archivo .html real y solo la página actual queda activa
+   con aria-current="page". Ningún enlace del menú ni del pie es un ancla. */
+const { posix } = await import('node:path');
+const rutaDesde = (origen, destino) => posix.relative(posix.dirname(origen), destino) || posix.basename(destino);
 
-for (const seccion of SECCIONES_INDEX) {
-  const tieneId = new RegExp(`id="${seccion}"`).test(htmlIndex);
-  const tieneEnlace = new RegExp(`href="#${seccion}"`).test(htmlIndex);
-  comprobar(`index.html: sección #${seccion} presente y enlazada`, tieneId && tieneEnlace);
+for (const archivo of PAGINAS_CON_MENU) {
+  const html = readFileSync(join(raiz, archivo), 'utf8');
+  const lista = html.match(/<ul class="pf-menu-lista">([\s\S]*?)<\/ul>/)?.[1] ?? '';
+  const enlaces = [...lista.matchAll(/<a\s+([^>]*)>([^<]*)<\/a>/g)].map(([, atributos, texto]) => ({
+    href: atributos.match(/href="([^"]*)"/)?.[1] ?? '',
+    activo: /pf-enlace-activo/.test(atributos),
+    current: atributos.match(/aria-current="([^"]*)"/)?.[1] ?? null,
+    texto: texto.trim()
+  }));
+
+  const esperado = MENU.map((m) => `${m.texto}=${rutaDesde(archivo, m.archivo)}`).join(' | ');
+  const real = enlaces.map((e) => `${e.texto}=${e.href}`).join(' | ');
+  comprobar(`${archivo}: el menú principal enlaza a las 7 páginas con rutas relativas`, real === esperado, real);
+
+  const actual = MENU.find((m) => m.archivo === archivo);
+  const activos = enlaces.filter((e) => e.activo || e.current);
+  if (actual) {
+    const ok = activos.length === 1 && activos[0].texto === actual.texto && activos[0].activo && activos[0].current === 'page';
+    comprobar(`${archivo}: "${actual.texto}" es el único enlace activo con aria-current="page"`, ok, activos.map((e) => `${e.texto}:${e.current}`).join(', '));
+  } else {
+    comprobar(`${archivo}: ningún enlace del menú queda activo`, activos.length === 0);
+  }
+
+  const pie = html.match(/<footer[\s\S]*?<\/footer>/)?.[0] ?? '';
+  const anclas = [...`${lista}${pie}`.matchAll(/href="([^"]*#[^"]*)"/g)].map((m) => m[1]);
+  comprobar(`${archivo}: el menú y el pie no usan anclas`, anclas.length === 0, anclas.join(', '));
+
+  const destinosPie = [...pie.matchAll(/href="([^"#:]+\.html)"/g)].map((m) => m[1]);
+  const faltanPie = MENU.slice(1).filter((m) => !destinosPie.includes(rutaDesde(archivo, m.archivo))).map((m) => m.texto);
+  comprobar(`${archivo}: el pie enlaza a las páginas de sección`, faltanPie.length === 0, faltanPie.join(', '));
+
+  comprobar(`${archivo}: conserva el salto "Ir al contenido principal"`, /<a class="pf-saltar" href="#contenido">/.test(html) && /<main id="contenido"/.test(html));
 }
 
-for (const ruta of RUTAS_LEGADAS) {
-  comprobar(`index.html: ya no enlaza a la página legada ${ruta}`, !htmlIndex.includes(`"${ruta}"`));
+/* Ningún HTML ni script del sitio enlaza a un ancla de la antigua página única. */
+const restos = [];
+for (const archivo of [...PAGINAS.map((p) => p.archivo), 'admin/login.html']) {
+  const html = readFileSync(join(raiz, archivo), 'utf8');
+  for (const m of html.matchAll(/href="([^"]*#(?:inicio|planes|tienda|clases|rutinas|nutricion|contacto))"/g)) restos.push(`${archivo}: ${m[1]}`);
 }
+for (const modulo of ['js/app.js', 'js/carrito-panel.js', 'js/admin.js']) {
+  const js = readFileSync(join(raiz, modulo), 'utf8');
+  for (const m of js.matchAll(/index\.html#[a-z]+/g)) restos.push(`${modulo}: ${m[0]}`);
+  if (/hashchange|pushState|popstate/.test(js)) restos.push(`${modulo}: navegación por hash`);
+}
+comprobar('No quedan enlaces ni redirecciones a anclas de la antigua página única', restos.length === 0, restos.join(' | '));
 
 /* Imágenes referenciadas por las páginas y los JSON. */
 const existentes = new Set();

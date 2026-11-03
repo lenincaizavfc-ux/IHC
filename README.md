@@ -10,7 +10,7 @@ El objetivo del proyecto es aplicar los conocimientos trabajados en clase (HTML5
 
 El sitio tiene dos áreas separadas:
 
-- **Área pública / cliente:** una **página única** (`index.html`) con secciones internas (`#inicio`, `#planes`, `#tienda`, `#clases`, `#rutinas`, `#nutricion`, `#contacto`), más las páginas independientes `cliente/nutricion.html`, `cliente/login.html` y `cliente/checkout.html`. El carrito es un **panel lateral** disponible en todo el sitio.
+- **Área pública / cliente:** un **sitio multipágina**: cada sección del menú es su propio archivo HTML (sin One-Page ni navegación por anclas). `index.html` es la portada (hero y tarjetas de acceso) y el resto vive en `cliente/`: `planes.html`, `tienda.html`, `clases.html`, `rutinas.html`, `nutricion.html`, `contacto.html`, `login.html` y `checkout.html`. El carrito es un **panel lateral** disponible en todo el sitio.
 - **Área administrativa:** dashboard para gestionar productos, planes, clases, entrenadores y las citas de nutrición, con sus propias páginas en `admin/`.
 
 No hay backend ni base de datos remota: toda la información del catálogo vive en archivos JSON locales y en el almacenamiento del navegador.
@@ -78,9 +78,14 @@ PROYECTO_RDA_1/
 │   └── admin.js
 │
 ├── cliente/
-│   ├── checkout.html
+│   ├── planes.html
+│   ├── tienda.html
+│   ├── clases.html
+│   ├── rutinas.html
 │   ├── nutricion.html
-│   └── login.html
+│   ├── contacto.html
+│   ├── login.html
+│   └── checkout.html
 │
 ├── admin/
 │   ├── login.html
@@ -96,6 +101,7 @@ PROYECTO_RDA_1/
     ├── prueba-repo.mjs
     ├── prueba-selectores.mjs
     ├── prueba-navegador.mjs
+    ├── prueba-paginas.mjs
     ├── prueba-accesibilidad.mjs
     ├── prueba-arquitectura.mjs
     ├── prueba-enlaces.mjs
@@ -134,7 +140,21 @@ Los módulos permiten la **modularidad en frontend**, reutilizando funciones y m
 
 ### Área pública / Cliente
 
-- **Página única:** `index.html` reúne las secciones `#inicio`, `#planes`, `#tienda`, `#clases`, `#rutinas`, `#nutricion`, `#contacto`. También existen las páginas independientes `cliente/nutricion.html`, `cliente/login.html` y `cliente/checkout.html`.
+- **Sitio multipágina:** cada página tiene su propio `<title>`, meta description, un solo `<h1>` y su `data-pagina` en el `<body>`, que `js/app.js` usa para elegir el controlador:
+
+  | Página | Archivo | `data-pagina` | Contenido |
+  | --- | --- | --- | --- |
+  | Inicio | `index.html` | `inicio` | Hero y tarjetas que llevan a cada página |
+  | Planes | `cliente/planes.html` | `planes` | Planes desde `planes.json` y «Cómo elegir tu plan» |
+  | Tienda | `cliente/tienda.html` | `tienda` | Productos por categoría desde `productos.json` |
+  | Clases | `cliente/clases.html` | `clases` | Clases y entrenadores desde `clases.json` y `entrenadores.json` |
+  | Rutinas | `cliente/rutinas.html` | `rutinas` | Niveles y servicios desde `gimnasio.json` |
+  | Nutrición | `cliente/nutricion.html` | `nutricion` | Servicios de la nutricionista y solicitud de cita |
+  | Contacto | `cliente/contacto.html` | `contacto` | Dirección, horarios y formulario de contacto |
+  | Inscríbete | `cliente/login.html` | `login` | Inicio de sesión y registro |
+  | Finalizar compra | `cliente/checkout.html` | `checkout` | Resumen y confirmación del pedido |
+
+  El menú principal es el mismo en todas las páginas (Inicio, Planes, Tienda, Clases, Rutinas, Nutrición, Contacto, Inscríbete/sesión, carrito y botón de menú) y enlaza a los archivos reales con rutas relativas. La página actual lleva `pf-enlace-activo` y `aria-current="page"`. Ningún enlace del menú ni del pie usa anclas; cada página conserva el enlace de accesibilidad «Ir al contenido principal» (`#contenido`).
 - **Catálogo de productos:** se cargan desde `data/productos.json` mediante **Fetch API**, con un total de **10 productos** organizados por **categorías** (Suplementos, Ropa y Accesorios). Se renderizan dinámicamente con `js/view.js`. No hay buscador ni filtros.
 - **Planes:** se cargan desde `data/planes.json`. El botón «Elegir plan» agrega el plan al carrito (tipo `plan`), sin exigir sesión, y abre el panel lateral.
 - **Clases:** se cargan desde `data/clases.json` y `data/entrenadores.json`, mostrando horarios agrupados por actividad, lugar y entrenador.
@@ -270,7 +290,7 @@ La validación se ejecuta tanto en `blur/input` como al enviar el formulario. Tr
 Se aplican principios de **accesibilidad web (WCAG)**:
 
 - **HTML semántico:** un solo `<main>` por página, un solo `<h1>`, jerarquía ordenada de encabezados y `<article>` para cada producto, plan, clase o entrenador.
-- **ARIA:** uso de `aria-live="polite"` para mensajes dinámicos, `aria-busy` en contenedores que cargan datos, `aria-invalid` y `aria-describedby` en campos con error, `aria-current="location"` en enlace activo y `aria-modal="true"` en panel lateral y modal de acceso.
+- **ARIA:** uso de `aria-live="polite"` para mensajes dinámicos, `aria-busy` en contenedores que cargan datos, `aria-invalid` y `aria-describedby` en campos con error, `aria-current="page"` en el enlace de la página actual y `aria-modal="true"` en panel lateral y modal de acceso.
 - **Navegación por teclado:** completamente operable con `Tab`, `Shift+Tab`, `Enter` y `Espacio`.
 - **Gestión del foco:** el panel lateral y el modal de acceso confinan el foco dentro del diálogo, se cierran con `Escape` o con la capa oscura y devuelven el foco al botón que los abrió.
 - **Foco visible:** `:focus-visible` con contorno de 3 px y `outline-offset`.
@@ -380,13 +400,14 @@ Las pruebas son archivos de Node.js sin dependencias del sitio web. Se ejecutan 
 ```bash
 node pruebas/prueba-logica.mjs        # Carrito y validaciones
 node pruebas/prueba-repo.mjs          # Fetch, merging y respaldo en IndexedDB
-node pruebas/prueba-selectores.mjs    # Selectores, anclas e imágenes existentes
+node pruebas/prueba-selectores.mjs    # Selectores, menú multipágina e imágenes existentes
 node pruebas/prueba-accesibilidad.mjs # Accesibilidad
 node pruebas/prueba-arquitectura.mjs  # Arquitectura
 node pruebas/prueba-enlaces.mjs      # Enlaces
 node pruebas/prueba-html.mjs          # HTML
 node pruebas/prueba-responsive.mjs   # Responsive
 node pruebas/prueba-navegador.mjs     # Flujo real con Playwright
+node pruebas/prueba-paginas.mjs       # Cada página carga y marca su enlace activo
 ```
 
 `prueba-navegador.mjs` levanta su propio servidor estático (`pruebas/servidor.mjs`) y utiliza **Playwright** (dependencia exclusiva de las pruebas, no del sitio). Para ejecutarla:
@@ -409,7 +430,7 @@ El repositorio incluye un archivo de workflow en `.github/workflows/` con el obj
 
 ### Cobertura funcional
 
-- [x] Página única con anclas: 3 planes, 10 productos, 2 clases, 3 entrenadores, 5 sesiones de
+- [x] Sitio multipágina: 3 planes, 10 productos, 2 clases, 3 entrenadores, 5 sesiones de
       horario, 6 servicios, 3 niveles y 3 horarios de atención.
 - [x] Catálogo de 10 productos agrupado en secciones por categoría (Suplementos, Ropa, Accesorios),
       generado desde el JSON, sin buscador ni filtros.
@@ -433,16 +454,17 @@ El repositorio incluye un archivo de workflow en `.github/workflows/` con el obj
 - [x] Cita de nutrición visible en el dashboard.
 - [x] Aviso de cookies y marca de última actualización.
 - [x] Copia del catálogo efectivo guardada en IndexedDB.
-- [x] Encabezado fijo (`sticky`) con sombra al bajar y **navegación activa** que marca la sección
-      visible (`.pf-enlace-activo` + `aria-current="location"`).
+- [x] Encabezado fijo (`sticky`) con sombra al bajar y **navegación activa** que marca la página
+      actual (`.pf-enlace-activo` + `aria-current="page"`).
 - [x] Menú responsive: en línea en escritorio y como **panel flotante** en móvil (sin empujar el
-      contenido), que se cierra con Escape, al elegir una sección, con el botón o al hacer clic fuera.
+      contenido), que se cierra con Escape, al elegir una página, con el botón o al hacer clic fuera.
 - [x] Encabezado de altura cómoda que crece en escritorio (logo, enlaces y botones con más aire)
       sin volver al encabezado gigante ni romper la navegación.
 - [x] Clases como tarjetas por actividad: foto, descripción, horarios agrupados con día y hora,
       lugar y entrenador, en una columna en móvil y dos en escritorio.
-- [x] Navegación de una sola página por anclas (`#inicio`, `#planes`, `#tienda`, `#clases`,
-      `#rutinas`, `#nutricion`, `#contacto`).
+- [x] Navegación multipágina: cada enlace del menú y del pie va a su archivo `.html`
+      (`index.html` y `cliente/planes.html`, `tienda.html`, `clases.html`, `rutinas.html`,
+      `nutricion.html`, `contacto.html`), sin anclas entre secciones.
 - [x] Sin desbordamiento horizontal en 320, 375, 390, 430, 768, 1024 y 1440 px.
 - [x] Enlace de salto al contenido, textos alternativos y un solo `h1` por página.
 - [x] Sin errores de JavaScript en la consola durante todo el recorrido.
