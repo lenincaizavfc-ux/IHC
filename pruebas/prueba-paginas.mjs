@@ -92,6 +92,20 @@ for (const { ruta, pagina: clave, activo } of PAGINAS) {
 
   // Carrito lateral y contador.
   comprobar(`${ruta}: contador del carrito presente`, (await pagina.locator('header [data-contador-carrito]').innerText()).trim() === '0');
+
+  // WCAG 2.2 SC 2.5.3: el nombre accesible empieza por el texto visible.
+  const nombreCarrito = (await pagina.getAttribute('header [data-abrir-carrito]', 'aria-label')) || '';
+  const visibleCarrito = (await pagina.locator('header [data-abrir-carrito] :not([aria-hidden="true"])').allInnerTexts())
+    .map((t) => t.trim()).filter(Boolean).join(' ');
+  const normalizar = (t) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  comprobar(`${ruta}: el nombre del carrito empieza por su texto visible`,
+    normalizar(nombreCarrito).startsWith(normalizar(visibleCarrito)) && nombreCarrito === 'Carrito, 0 productos',
+    `visible "${visibleCarrito}" -> nombre "${nombreCarrito}"`);
+  const botones = await pagina.locator('main button[aria-label]').evaluateAll((bs) =>
+    bs.map((b) => ({ visible: b.innerText.trim(), nombre: b.getAttribute('aria-label') })));
+  const malos = botones.filter((b) => b.visible && !normalizar(b.nombre).startsWith(normalizar(b.visible)));
+  comprobar(`${ruta}: los botones con aria-label empiezan por su texto visible`, malos.length === 0,
+    malos.map((b) => `"${b.visible}" -> "${b.nombre}"`).join(' | ') || `${botones.length} revisados`);
   await pagina.click('header [data-abrir-carrito]');
   await pagina.waitForTimeout(400);
   comprobar(`${ruta}: el carrito lateral se abre`, await pagina.locator('[data-panel-carrito]').isVisible());

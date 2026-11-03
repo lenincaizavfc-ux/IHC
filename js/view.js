@@ -63,7 +63,7 @@ export function tarjetaProducto(producto) {
           class="pf-boton pf-boton-primario w-full"
           data-accion="agregar"
           data-id="${escapar(producto.id)}"
-          aria-label="Agregar ${escapar(producto.nombre)} al carrito, precio ${formatearPrecio(
+          aria-label="Agregar al carrito: ${escapar(producto.nombre)}, ${formatearPrecio(
     producto.precio
   )}">
           Agregar al carrito
@@ -131,7 +131,7 @@ export function tarjetaPlan(plan) {
           data-plan-id="${escapar(plan.id)}"
           data-plan-nombre="${escapar(plan.nombre)}"
           data-plan-precio="${escapar(plan.precio)}"
-          aria-label="Agregar ${escapar(plan.nombre)} al carrito, precio ${formatearPrecio(
+          aria-label="Elegir plan: ${escapar(plan.nombre)}, ${formatearPrecio(
     plan.precio
   )} al mes">
           Elegir plan
@@ -249,6 +249,16 @@ export function vacio(mensaje = 'No hay información disponible por ahora.') {
  * carrito debe indicar cuántas personas hay dentro.
  * @param {number} articulos
  */
+/**
+ * Nombre accesible del botón del carrito. Empieza por el texto visible
+ * («Carrito» y el número del contador) para cumplir WCAG 2.2 SC 2.5.3
+ * (Etiqueta en el nombre): quien usa control por voz dice lo que ve.
+ * @param {number} articulos
+ */
+export function nombreBotonCarrito(articulos) {
+  return `Carrito, ${articulos} producto${articulos === 1 ? '' : 's'}`;
+}
+
 export function actualizarContadorCarrito(articulos = contarArticulos()) {
   document.querySelectorAll('[data-contador-carrito]').forEach((elemento) => {
     elemento.textContent = articulos;
@@ -256,9 +266,7 @@ export function actualizarContadorCarrito(articulos = contarArticulos()) {
     if (contenedor) {
       contenedor.setAttribute(
         'aria-label',
-        articulos === 0
-          ? 'Carrito de compras, vacío'
-          : `Carrito de compras con ${articulos} producto${articulos === 1 ? '' : 's'}`
+        nombreBotonCarrito(articulos)
       );
     }
   });

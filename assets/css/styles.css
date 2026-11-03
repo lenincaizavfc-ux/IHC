@@ -1196,6 +1196,46 @@ select option {
   border-left-color: var(--pf-rojo);
 }
 
+/* Contraste mínimo (WCAG 2.2 SC 1.4.3) sobre el fondo #f8f9fa del panel.
+   Los colores por defecto de Bootstrap se quedaban por debajo de 4.5:1:
+   enlace del breadcrumb #0d6efd (4.26:1), .btn-outline-secondary #6c757d
+   (4.44:1) y el botón rojo de restablecer #dc3545 (4.29:1). Se usan los
+   tonos inmediatamente más oscuros de la propia paleta de Bootstrap, así
+   que el aspecto no cambia. Bootstrap 5.3 pinta con variables CSS, por eso
+   se redefinen las variables además del color. */
+.pf-admin .breadcrumb-item a {
+  --bs-link-color-rgb: 10, 88, 202;
+  --bs-link-hover-color-rgb: 8, 66, 152;
+  color: #0a58ca;
+}
+
+.pf-admin .breadcrumb-item a:hover,
+.pf-admin .breadcrumb-item a:focus-visible {
+  color: #084298;
+}
+
+.pf-admin .btn-outline-secondary {
+  --bs-btn-color: #5c636a;
+  --bs-btn-border-color: #5c636a;
+  --bs-btn-hover-bg: #5c636a;
+  --bs-btn-hover-border-color: #5c636a;
+  --bs-btn-active-bg: #565e64;
+  --bs-btn-active-border-color: #565e64;
+  --bs-btn-disabled-color: #5c636a;
+  --bs-btn-disabled-border-color: #5c636a;
+}
+
+.pf-admin [data-restablecer-catalogo] {
+  --bs-btn-color: #b02a37;
+  --bs-btn-border-color: #b02a37;
+  --bs-btn-hover-bg: #b02a37;
+  --bs-btn-hover-border-color: #b02a37;
+  --bs-btn-active-bg: #842029;
+  --bs-btn-active-border-color: #842029;
+  --bs-btn-disabled-color: #b02a37;
+  --bs-btn-disabled-border-color: #b02a37;
+}
+
 /* ---------- Respeta a quien prefiere reducir el movimiento ---------- */
 
 @media (prefers-reduced-motion: reduce) {
